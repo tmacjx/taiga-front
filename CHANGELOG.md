@@ -9,6 +9,7 @@
 - Errors (not found, server error, permissions and blocked project) don't change the current url.
 - Attachments image slider
 - New admin area to edit the tag colors used in your project
+- Velocity forecasting based on the historical velocity of the project.
 
 ### Misc
 - Lots of small and not so small bugfixes.
