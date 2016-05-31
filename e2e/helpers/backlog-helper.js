@@ -225,3 +225,7 @@ helper.fiterRole = async function(value) {
 
     return utils.popover.open(rolePointsSelector, value);
 };
+
+helper.velocityForecasting = function() {
+    return $('.velocity-forecasting-line');
+};
