@@ -487,22 +487,40 @@ module.directive("tgMarkitup", ["$rootScope", "$tgResources", "$selectedText", "
 Medium = () ->
     template = """
         <div>
-            <p>Saving...</p>
+            <p ng-if="saving">Saving...</p>
             <div class="medium"></div>
         </div>
     """
 
     link = ($scope, $el, $attrs) ->
+        mediumEditor = null
+        editor = $el.find('.medium')
+
+        save = () ->
+            $scope.$apply () ->
+                # https://github.com/yabwe/medium-editor/issues/543
+                converter = {
+                    filter: ['html', 'body', 'span', 'div'],
+                    replacement: (innerHTML) ->
+                        return innerHTML
+                }
+
+                markdownText = toMarkdown(editor.html(), {
+                    converters: [converter]
+                })
+
+                $scope.onSave({text: markdownText})
+
         create = (text) ->
-            editor = $el.find('.medium')
+            if mediumEditor
+                mediumEditor.destroy()
+
             converter = new showdown.Converter()
             text = converter.makeHtml(text)
 
             editor.html(text)
 
-            console.log editor
-
-            new MediumEditor(editor[0], {
+            mediumEditor = new MediumEditor(editor[0], {
                 toolbar: {
                     buttons: [
                         'bold',
@@ -521,21 +539,21 @@ Medium = () ->
                     ]
                 },
                 extensions: {
-                    autolist: new AutoList(),
-                    markdown: new MeMarkdown (md) ->
-                        console.log md
-                        # markDownEl.textContent = md
+                    autolist: new AutoList()
                 }
-            });
+            })
 
-        $scope.$watch $attrs.tgMedium, (content) ->
-            if content
-                console.log content
-                text = $scope.$eval($attrs.tgMedium)
-                create(text)
+            mediumEditor.subscribe 'editableInput', _.debounce(save, 1000)
+
+        $scope.$watch 'content', (content) ->
+            create(content) if content
 
     return {
-        scope: true,
+        scope: {
+            content: '<',
+            saving: '=',
+            onSave: '&'
+        },
         link: link,
         template: template
     }

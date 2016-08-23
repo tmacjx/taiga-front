@@ -188,7 +188,7 @@ paths.libs = [
     paths.app + "js/murmurhash3_gc.js",
     paths.modules + "awesomplete/awesomplete.js",
     paths.modules + "medium-editor/dist/js/medium-editor.js",
-    paths.modules + "medium-editor-markdown/dist/me-markdown.standalone.js",
+    paths.modules + "to-markdown/dist/to-markdown.js",
     paths.modules + "showdown/dist/showdown.js",
     paths.vendor + "medium-editor-autolist/dist/autolist.js"
 ];

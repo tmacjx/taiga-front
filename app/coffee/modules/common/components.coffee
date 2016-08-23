@@ -579,6 +579,29 @@ module.directive("tgEditableSubject", ["$rootScope", "$tgRepo", "$tgConfirm", "$
                                        "$tgTemplate", EditableSubjectDirective])
 
 
+ItemMedium = () ->
+    link = ($scope) ->
+        $scope.savingDescription = false
+
+        $scope.saveDescription = (text) ->
+            $scope.savingDescription = true
+            console.log "biiien"
+
+    return {
+        link: link,
+        template: """
+            <tg-medium
+                class='wysiwyg'
+                content='item.description'
+                saving="savingDescription"
+                on-save='saveDescription(text)'>
+            </tg-medium>
+        """
+    }
+
+module.directive("tgItemMedium", ItemMedium)
+
+
 #############################################################################
 ## Editable description directive
 #############################################################################
