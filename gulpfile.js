@@ -71,7 +71,9 @@ paths.css_vendor = [
     paths.vendor + "intro.js/introjs.css",
     paths.vendor + "dragula.js/dist/dragula.css",
     paths.modules + "awesomplete/awesomplete.css",
-    paths.app + "styles/vendor/*.css"
+    paths.app + "styles/vendor/*.css",
+    paths.modules + "medium-editor/dist/css/medium-editor.css",
+    paths.modules + "medium-editor/dist/css/themes/default.css"
 ];
 paths.locales = paths.app + "locales/**/*.json";
 paths.modulesLocales = paths.app + "modules/**/locales/*.json";
@@ -184,7 +186,11 @@ paths.libs = [
     paths.app + "js/tg-repeat.js",
     paths.app + "js/sha1-custom.js",
     paths.app + "js/murmurhash3_gc.js",
-    paths.modules + "awesomplete/awesomplete.js"
+    paths.modules + "awesomplete/awesomplete.js",
+    paths.modules + "medium-editor/dist/js/medium-editor.js",
+    paths.modules + "medium-editor-markdown/dist/me-markdown.standalone.js",
+    paths.modules + "showdown/dist/showdown.js",
+    paths.vendor + "medium-editor-autolist/dist/autolist.js"
 ];
 
 var isDeploy = argv["_"].indexOf("deploy") !== -1;

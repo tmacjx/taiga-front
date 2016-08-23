@@ -482,5 +482,62 @@ MarkitupDirective = ($rootscope, $rs, $selectedText, $template, $compile, $trans
 
     return {link:link, require:"ngModel"}
 
-module.directive("tgMarkitup", ["$rootScope", "$tgResources", "$selectedText", "$tgTemplate", "$compile",
-                                "$translate", MarkitupDirective])
+module.directive("tgMarkitup", ["$rootScope", "$tgResources", "$selectedText", "$tgTemplate", "$compile", "$translate", MarkitupDirective])
+
+Medium = () ->
+    template = """
+        <div>
+            <p>Saving...</p>
+            <div class="medium"></div>
+        </div>
+    """
+
+    link = ($scope, $el, $attrs) ->
+        create = (text) ->
+            editor = $el.find('.medium')
+            converter = new showdown.Converter()
+            text = converter.makeHtml(text)
+
+            editor.html(text)
+
+            console.log editor
+
+            new MediumEditor(editor[0], {
+                toolbar: {
+                    buttons: [
+                        'bold',
+                        'italic',
+                        'underline',
+                        'strikethrough',
+                        'anchor',
+                        'image',
+                        'orderedlist',
+                        'unorderedlist',
+                        'h1',
+                        'h2',
+                        'h3',
+                        'quote',
+                        'pre'
+                    ]
+                },
+                extensions: {
+                    autolist: new AutoList(),
+                    markdown: new MeMarkdown (md) ->
+                        console.log md
+                        # markDownEl.textContent = md
+                }
+            });
+
+        $scope.$watch $attrs.tgMedium, (content) ->
+            if content
+                console.log content
+                text = $scope.$eval($attrs.tgMedium)
+                create(text)
+
+    return {
+        scope: true,
+        link: link,
+        template: template
+    }
+
+module.directive("tgMedium", Medium)
