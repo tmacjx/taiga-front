@@ -143,4 +143,13 @@
     .medium-editor-placeholder {
         padding-left: 1rem;
     }
+    .mode-editor span {
+        cursor: pointer;
+    }
+    .markdown {
+        white-space: pre-line;
+    }
+    .edit-mode {
+        border: 1px solid $gray-light;
+    }
 }

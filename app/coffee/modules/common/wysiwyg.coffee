@@ -489,10 +489,11 @@ Medium = ($translate, $confirm, $storage) ->
         mediumEditor = null
         editor = $el.find('.medium')
         originalHTML = ''
-        $scope.dirty  = false
-        $scope.hasFocus = false
 
-        # Object.define $scope, "dirty", () ->
+        $scope.tools = false
+        $scope.mode = 'html'
+
+        $scope.setMode = (mode) -> $scope.mode = mode
 
         $scope.save = () ->
             $scope.saving  = true
@@ -502,7 +503,8 @@ Medium = ($translate, $confirm, $storage) ->
             return
 
         $scope.cancel = () ->
-            $scope.dirty = false
+            $scope.tools = false
+
             html = getHTML($scope.content)
             editor.html(html)
             discardLocalStorage()
@@ -511,7 +513,7 @@ Medium = ($translate, $confirm, $storage) ->
 
         saveEnd = () ->
             $scope.saving  = false
-            $scope.dirty = false
+            $scope.tools = false
             discardLocalStorage()
 
         uploadEnd = (name, url) ->
@@ -626,8 +628,6 @@ Medium = ($translate, $confirm, $storage) ->
 
             mediumEditor.subscribe 'editableInput', () ->
                 $scope.$applyAsync () ->
-                    $scope.dirty = originalHTML != editor.html()
-
                     throttleLocalSave()
 
             mediumEditor.subscribe "editableClick", (e) ->
@@ -635,10 +635,7 @@ Medium = ($translate, $confirm, $storage) ->
                     window.open(e.target.href)
 
             mediumEditor.subscribe 'focus', (event) ->
-                $scope.$applyAsync () -> $scope.hasFocus = true
-
-            mediumEditor.subscribe 'blur', (event) ->
-                $scope.$applyAsync () -> $scope.hasFocus = false
+                $scope.$applyAsync () -> $scope.tools = true
 
             mediumEditor.subscribe 'editableDrop', (event) ->
                 $scope.onUploadFile({files: event.dataTransfer.files, cb: uploadEnd})
@@ -646,7 +643,7 @@ Medium = ($translate, $confirm, $storage) ->
             mediumEditor.subscribe 'editableKeydown', (e) ->
                 code = if e.keyCode then e.keyCode else e.which
 
-                if $scope.dirty && code == 27
+                if $scope.tools && code == 27
                     e.stopPropagation()
                     $scope.$applyAsync(cancelWithConfirmation)
                 else if code == 27
@@ -657,11 +654,9 @@ Medium = ($translate, $confirm, $storage) ->
         $scope.$watch 'content', (content) ->
             if !_.isUndefined(content)
                 $scope.outdated = isOutdated()
-                $scope.dirty = isDraft()
-
                 content = getCurrentContent()
 
-                create(content, $scope.dirty)
+                create(content, isDraft())
 
     return {
         templateUrl: "common/components/wysiwyg-toolbar.html",

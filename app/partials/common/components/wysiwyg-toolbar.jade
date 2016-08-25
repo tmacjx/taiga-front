@@ -1,5 +1,5 @@
 div
-    div(ng-if="hasFocus")
+    div(ng-if="tools")
         a(
             tg-loading="saving"
             href="#",
@@ -16,10 +16,22 @@ div
     div(ng-if="outdated")
         p This draft has an outdated version
 
-    .medium
+    .medium(
+        ng-class="{'edit-mode': tools}"
+        ng-show="mode == 'html'")
 
-    a(
-        ng-if="hasFocus"
-        href="#",
-        ng-click="markdown()"
-    ) Markdown
+    .markdown(
+        ng-class="{'edit-mode': tools}"
+        ng-show="mode == 'markdown'")
+        {{content}}
+
+    .mode-editor(ng-if="tools")
+        span(
+            ng-if="mode=='html'"
+            ng-click="setMode('markdown')"
+        ) Markdown Mode
+
+        span(
+            ng-if="mode=='markdown'"
+            ng-click="setMode('html')"
+        ) HTML Mode
