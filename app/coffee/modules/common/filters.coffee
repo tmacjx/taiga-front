@@ -74,3 +74,14 @@ sizeFormat = =>
     return @.taiga.sizeFormat
 
 module.filter("sizeFormat", sizeFormat)
+
+
+markdownToHTML = ->
+    return (input) ->
+        if input
+            converter = new showdown.Converter()
+            return converter.makeHtml(input)
+
+        return ""
+
+module.filter("markdownToHTML", markdownToHTML)

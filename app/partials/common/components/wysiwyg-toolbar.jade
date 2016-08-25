@@ -1,0 +1,25 @@
+div
+    div(ng-if="hasFocus")
+        a(
+            tg-loading="saving"
+            href="#",
+            ng-click="save()"
+        )
+            tg-svg(svg-icon="icon-save")
+        a(
+            href="#",
+            ng-click="cancel()"
+            title="{{ 'COMMON.CANCEL' | translate }}"
+        )
+            tg-svg(svg-icon="icon-close")
+
+    div(ng-if="outdated")
+        p This draft has an outdated version
+
+    .medium
+
+    a(
+        ng-if="hasFocus"
+        href="#",
+        ng-click="markdown()"
+    ) Markdown

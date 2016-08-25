@@ -484,43 +484,124 @@ MarkitupDirective = ($rootscope, $rs, $selectedText, $template, $compile, $trans
 
 module.directive("tgMarkitup", ["$rootScope", "$tgResources", "$selectedText", "$tgTemplate", "$compile", "$translate", MarkitupDirective])
 
-Medium = () ->
-    template = """
-        <div>
-            <p ng-if="saving">Saving...</p>
-            <div class="medium"></div>
-        </div>
-    """
-
+Medium = ($translate, $confirm, $storage) ->
     link = ($scope, $el, $attrs) ->
         mediumEditor = null
         editor = $el.find('.medium')
+        originalHTML = ''
+        $scope.dirty  = false
+        $scope.hasFocus = false
 
-        save = () ->
-            $scope.$apply () ->
-                # https://github.com/yabwe/medium-editor/issues/543
-                converter = {
-                    filter: ['html', 'body', 'span', 'div'],
-                    replacement: (innerHTML) ->
-                        return innerHTML
-                }
+        # Object.define $scope, "dirty", () ->
 
-                markdownText = toMarkdown(editor.html(), {
-                    converters: [converter]
-                })
+        $scope.save = () ->
+            $scope.saving  = true
+            markdownText = getMarkdown(editor.html())
+            $scope.onSave({text: markdownText, cb: saveEnd})
 
-                $scope.onSave({text: markdownText})
+            return
 
-        create = (text) ->
+        $scope.cancel = () ->
+            $scope.dirty = false
+            html = getHTML($scope.content)
+            editor.html(html)
+            discardLocalStorage()
+
+            return
+
+        saveEnd = () ->
+            $scope.saving  = false
+            $scope.dirty = false
+            discardLocalStorage()
+
+        uploadEnd = (name, url) ->
+            if taiga.isImage(name)
+                mediumEditor.pasteHTML("<img src='" + url + "' /><br/>")
+            else
+                name = $('<div/>').text(name).html()
+                mediumEditor.pasteHTML("<a target='_blank' href='" + url + "'>" + name + "</a><br/>")
+
+        getMarkdown = (html) ->
+            # https://github.com/yabwe/medium-editor/issues/543
+            converter = {
+                filter: ['html', 'body', 'span', 'div'],
+                replacement: (innerHTML) ->
+                    return innerHTML
+            }
+
+            return toMarkdown(html, {
+                converters: [converter]
+            })
+
+        isOutdated = () ->
+            store = $storage.get($scope.storageKey)
+
+            if store && store.version != $scope.version
+                return true
+
+            return false
+
+        isDraft = () ->
+            store = $storage.get($scope.storageKey)
+
+            if store
+                return true
+
+            return false
+
+        getCurrentContent = () ->
+            store = $storage.get($scope.storageKey)
+
+            if store
+                return store.text
+
+            return $scope.content
+
+        discardLocalStorage = () ->
+            $storage.outdated = false
+            $storage.remove($scope.storageKey)
+
+        getHTML = (text) ->
+            converter = new showdown.Converter()
+            return converter.makeHtml(text)
+
+        cancelWithConfirmation = () ->
+            title = $translate.instant("COMMON.CONFIRM_CLOSE_EDIT_MODE_TITLE")
+            message = $translate.instant("COMMON.CONFIRM_CLOSE_EDIT_MODE_MESSAGE")
+
+            $confirm.ask(title, null, message).then (askResponse) ->
+                $scope.cancel()
+                askResponse.finish()
+
+        localSave = () ->
+            if $scope.storageKey && $scope.version
+                store = {}
+                store.version = $scope.version
+                store.text = getMarkdown(editor.html())
+
+                $storage.set($scope.storageKey, store)
+
+        throttleLocalSave = _.throttle(localSave, 1000)
+
+        create = (text, dirty) ->
+            originalHTML = ''
+
             if mediumEditor
                 mediumEditor.destroy()
 
-            converter = new showdown.Converter()
-            text = converter.makeHtml(text)
+            if text.length
+                html = getHTML(text)
+                editor.html(html)
 
-            editor.html(text)
+                originalHTML = html
 
             mediumEditor = new MediumEditor(editor[0], {
+                targetBlank: true,
+                autoLink: true,
+                imageDragging: false,
+                placeholder: {
+                    text: $translate.instant('COMMON.DESCRIPTION.EMPTY')
+                },
                 toolbar: {
                     buttons: [
                         'bold',
@@ -543,19 +624,60 @@ Medium = () ->
                 }
             })
 
-            mediumEditor.subscribe 'editableInput', _.debounce(save, 1000)
+            mediumEditor.subscribe 'editableInput', () ->
+                $scope.$applyAsync () ->
+                    $scope.dirty = originalHTML != editor.html()
+
+                    throttleLocalSave()
+
+            mediumEditor.subscribe "editableClick", (e) ->
+                if e.target.href
+                    window.open(e.target.href)
+
+            mediumEditor.subscribe 'focus', (event) ->
+                $scope.$applyAsync () -> $scope.hasFocus = true
+
+            mediumEditor.subscribe 'blur', (event) ->
+                $scope.$applyAsync () -> $scope.hasFocus = false
+
+            mediumEditor.subscribe 'editableDrop', (event) ->
+                $scope.onUploadFile({files: event.dataTransfer.files, cb: uploadEnd})
+
+            mediumEditor.subscribe 'editableKeydown', (e) ->
+                code = if e.keyCode then e.keyCode else e.which
+
+                if $scope.dirty && code == 27
+                    e.stopPropagation()
+                    $scope.$applyAsync(cancelWithConfirmation)
+                else if code == 27
+                    editor.blur()
+
+            editor.focus() if dirty
 
         $scope.$watch 'content', (content) ->
-            create(content) if content
+            if !_.isUndefined(content)
+                $scope.outdated = isOutdated()
+                $scope.dirty = isDraft()
+
+                content = getCurrentContent()
+
+                create(content, $scope.dirty)
 
     return {
+        templateUrl: "common/components/wysiwyg-toolbar.html",
         scope: {
+            version: '=',
+            storageKey: '=',
             content: '<',
-            saving: '=',
-            onSave: '&'
+            onSave: '&',
+            onUploadFile: '&'
         },
-        link: link,
-        template: template
+        link: link
     }
 
-module.directive("tgMedium", Medium)
+module.directive("tgMedium", [
+    "$translate",
+    "$tgConfirm",
+    "$tgStorage",
+    Medium
+])

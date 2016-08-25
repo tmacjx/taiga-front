@@ -579,27 +579,76 @@ module.directive("tgEditableSubject", ["$rootScope", "$tgRepo", "$tgConfirm", "$
                                        "$tgTemplate", EditableSubjectDirective])
 
 
-ItemMedium = () ->
-    link = ($scope) ->
-        $scope.savingDescription = false
+ItemMedium = ($modelTransform, $rootscope, $confirm, attachmentsFullService) ->
+    link = ($scope, $el, $attrs) ->
+        $scope.editableDescription = false
 
-        $scope.saveDescription = (text) ->
-            $scope.savingDescription = true
-            console.log "biiien"
+        $scope.saveDescription = (description, cb) ->
+            transform = $modelTransform.save (item) ->
+                item.description = description
+
+                return item
+
+            transform.then ->
+                $confirm.notify("success")
+                $rootscope.$broadcast("object:updated")
+
+            transform.then null, ->
+                $confirm.notify("error")
+
+            transform.finally ->
+                cb()
+
+        uploadFile = (file, cb) ->
+            return attachmentsFullService.addAttachment($scope.project.id, $scope.item.id, $attrs.type, file).then (result) ->
+                cb(result.getIn(['file', 'name']), result.getIn(['file', 'url']))
+
+        $scope.uploadFiles = (files, cb) ->
+            for file in files
+                uploadFile(file, cb)
+
+        $scope.$watch $attrs.model, (value) ->
+            return if not value
+            $scope.item = value
+            $scope.version = value.version
+            $scope.storageKey = $scope.project.id + "-" + value.id + "-" + $attrs.type
+
+        $scope.$watch 'project', (project) ->
+            return if !project
+
+            $scope.editableDescription = project.my_permissions.indexOf($attrs.requiredPerm) != -1
 
     return {
+        scope: true,
         link: link,
         template: """
-            <tg-medium
-                class='wysiwyg'
-                content='item.description'
-                saving="savingDescription"
-                on-save='saveDescription(text)'>
-            </tg-medium>
+            <div class='wysiwyg'>
+                <tg-medium
+                    ng-if="editableDescription"
+                    version='version'
+                    storage-key='storageKey'
+                    content='item.description'
+                    on-save='saveDescription(text, cb)'
+                    on-upload-file='uploadFiles(files, cb)'>
+                </tg-medium>
+
+                <div
+                    ng-if="!editableDescription && item.description.length"
+                    ng-bind-html="item.description | markdownToHTML"></div>
+
+                <div ng-if="!editableDescription && !item.description.length">
+                    {{'COMMON.DESCRIPTION.NO_DESCRIPTION' | translate}}
+                </div>
+            </div>
         """
     }
 
-module.directive("tgItemMedium", ItemMedium)
+module.directive("tgItemMedium", [
+    "$tgQueueModelTransformation",
+    "$rootScope",
+    "$tgConfirm",
+    "tgAttachmentsFullService",
+    ItemMedium])
 
 
 #############################################################################
