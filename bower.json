@@ -57,7 +57,6 @@
     "checksley": "~0.6.0",
     "jquery": "~2.2.3",
     "markitup-1x": "~1.1.14",
-    "jquery-textcomplete": "yuku-t/jquery-textcomplete#~0.7",
     "flot-axislabels": "markrcote/flot-axislabels",
     "flot-orderBars": "emmerich/flot-orderBars",
     "flot.tooltip": "~0.8.4",

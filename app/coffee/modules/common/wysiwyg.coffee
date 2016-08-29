@@ -58,433 +58,433 @@ module = angular.module("taigaCommon")
 #############################################################################
 ## WYSIWYG markitup editor directive
 #############################################################################
-MarkitupDirective = ($rootscope, $rs, $selectedText, $template, $compile, $translate) ->
-    previewTemplate = $template.get("common/wysiwyg/wysiwyg-markitup-preview.html", true)
+# MarkitupDirective = ($rootscope, $rs, $selectedText, $template, $compile, $translate) ->
+#     previewTemplate = $template.get("common/wysiwyg/wysiwyg-markitup-preview.html", true)
 
-    link = ($scope, $el, $attrs, $model) ->
-        element = angular.element($el)
-        previewDomNode = $("<div/>", {class: "preview"})
+#     link = ($scope, $el, $attrs, $model) ->
+#         element = angular.element($el)
+#         previewDomNode = $("<div/>", {class: "preview"})
 
-        closePreviewMode = ->
-            element.parents(".markdown").find(".preview").remove()
-            element.parents(".markItUp").show()
+#         closePreviewMode = ->
+#             element.parents(".markdown").find(".preview").remove()
+#             element.parents(".markItUp").show()
 
-        $scope.$on "markdown-editor:submit", ->
-            closePreviewMode()
+#         $scope.$on "markdown-editor:submit", ->
+#             closePreviewMode()
 
-        cancelablePromise = null
-        previewInProgress = false
+#         cancelablePromise = null
+#         previewInProgress = false
 
-        preview = ->
-            return if previewInProgress
+#         preview = ->
+#             return if previewInProgress
 
-            previewInProgress = true
-
-            markdownDomNode = element.parents(".markdown")
-            markItUpDomNode = element.parents(".markItUp")
+#             previewInProgress = true
+
+#             markdownDomNode = element.parents(".markdown")
+#             markItUpDomNode = element.parents(".markItUp")
 
-            $rs.mdrender.render($scope.projectId || $scope.vm.projectId, $model.$modelValue).then (data) ->
-                html = previewTemplate({data: data.data})
-                html = $compile(html)($scope)
+#             $rs.mdrender.render($scope.projectId || $scope.vm.projectId, $model.$modelValue).then (data) ->
+#                 html = previewTemplate({data: data.data})
+#                 html = $compile(html)($scope)
 
-                markdownDomNode.append(html)
-                markItUpDomNode.hide()
+#                 markdownDomNode.append(html)
+#                 markItUpDomNode.hide()
 
-                previewInProgress = false
+#                 previewInProgress = false
 
-                markdown = element.closest(".markdown")
+#                 markdown = element.closest(".markdown")
 
-                markdown.on "mouseup.preview", ".preview", (event) ->
-                    event.preventDefault()
-                    target = angular.element(event.target)
-
-                    if !target.is('a') and $selectedText.get().length
-                        return
-
-                    markdown.off(".preview")
-                    closePreviewMode()
-
-        setCaretPosition = (textarea, caretPosition) ->
-            if textarea.createTextRange
-                range = textarea.createTextRange()
-                range.move("character", caretPosition)
-                range.select()
-
-            else if textarea.selectionStart
-                textarea.focus()
-                textarea.setSelectionRange(caretPosition, caretPosition)
-
-            # Calculate the scroll position
-            totalLines = textarea.value.split("\n").length
-            line = textarea.value[0..(caretPosition - 1)].split("\n").length
-            scrollRelation = line / totalLines
-            $el.scrollTop((scrollRelation * $el[0].scrollHeight) - ($el.height() / 2))
-
-        addLine = (textarea, nline, replace) ->
-            lines = textarea.value.split("\n")
-
-            if replace
-                lines[nline] = replace + lines[nline]
-            else
-                lines[nline] = ""
-
-            cursorPosition = 0
-
-            for line, key in lines
-                cursorPosition += line.length + 1 || 1
-
-                break if key == nline
-
-            textarea.value = lines.join("\n")
-
-            #return the new position
-            if replace
-                return cursorPosition - lines[nline].length + replace.length - 1
-            else
-                return cursorPosition
-
-        prepareUrlFormatting = (markItUp) ->
-            regex = /(<<<|>>>)/gi
-            result = 0
-            indices = []
-            (indices.push(result.index)) while ( (result = regex.exec(markItUp.textarea.value)) )
-            markItUp.donotparse = indices
-
-        urlFormatting = (markItUp) ->
-            regex = /<<</gi
-            result = 0
-            startIndex = 0
-
-            loop
-                result = regex.exec(markItUp.textarea.value)
-                break if !result
-                if result.index not in markItUp.donotparse
-                    startIndex = result.index
-                    break
-
-            return if !result
-
-            regex = />>>/gi
-            endIndex = 0
-            loop
-                result = regex.exec(markItUp.textarea.value)
-                break if !result
-                if result.index not in markItUp.donotparse
-                    endIndex = result.index
-                    break
-
-            value = markItUp.textarea.value
-            url = value.substring(startIndex, endIndex).replace('<<<', '').replace('>>>', '')
-            url = url.replace('(', '%28').replace(')', '%29')
-            url = url.replace('[', '%5B').replace(']', '%5D')
-            value = value.substring(0, startIndex) + url + value.substring(endIndex+3, value.length)
-            markItUp.textarea.value = value
-            markItUp.donotparse = undefined
-
-        markdownTitle = (markItUp, char) ->
-            heading = ""
-            n = $.trim(markItUp.selection or markItUp.placeHolder).length
-
-            for i in [0..n-1]
-                heading += char
-
-            return "\n"+heading+"\n"
-
-        renderMarkItUp = () ->
-            markdownSettings =
-                nameSpace: "markdown"
-                onShiftEnter: {keepDefault:false, openWith:"\n\n"}
-                onEnter:
-                    keepDefault: false,
-                    replaceWith: () ->
-                        # Allow textcomplete to intercept the enter key if the options list is displayed
-                        # @todo There doesn't seem to be a more graceful way to do this with the textcomplete API.
-                        if not $('.textcomplete-dropdown').is(':visible')
-                            "\n"
-                    afterInsert: (data) ->
-                        lines = data.textarea.value.split("\n")
-                        # Detect if we are in this situation +- aa at the beginning if the textarea
-                        if data.caretPosition > 0
-                            cursorLine = data.textarea.value[0..(data.caretPosition - 1)].split("\n").length
-                        else
-                            cursorLine = 1
-
-                        newLineContent = data.textarea.value[data.caretPosition..].split("\n")[0]
-                        lastLine = lines[cursorLine - 1]
-
-                        # unordered list -
-                        match = lastLine.match /^(\s*- ).*/
-
-                        if match
-                            emptyListItem = lastLine.match /^(\s*)\-\s$/
-
-                            if emptyListItem
-                                nline = cursorLine - 1
-                                replace = null
-                            else
-                                nline = cursorLine
-                                replace = "#{match[1]}"
-
-                            markdownCaretPositon = addLine(data.textarea, nline, replace)
-
-                        # unordered list *
-                        match = lastLine.match /^(\s*\* ).*/
-
-                        if match
-                            emptyListItem = lastLine.match /^(\s*\* )$/
-
-                            if emptyListItem
-                                nline = cursorLine - 1
-                                replace = null
-                            else
-                                nline = cursorLine
-                                replace = "#{match[1]}"
-
-                            markdownCaretPositon = addLine(data.textarea, nline, replace)
-
-                        # ordered list
-                        match = lastLine.match /^(\s*)(\d+)\.\s/
-
-                        if match
-                            emptyListItem = lastLine.match /^(\s*)(\d+)\.\s$/
-
-                            if emptyListItem
-                                nline = cursorLine - 1
-                                replace = null
-                            else
-                                nline = cursorLine
-                                replace = "#{match[1] + (parseInt(match[2], 10) + 1)}. "
-
-                            markdownCaretPositon = addLine(data.textarea, nline, replace)
-
-                        setCaretPosition(data.textarea, markdownCaretPositon) if markdownCaretPositon
-
-                markupSet: [
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.H1_BUTTON")
-                        key: "1"
-                        placeHolder: $translate.instant("COMMON.WYSIWYG.H1_SAMPLE_TEXT")
-                        closeWith: (markItUp) -> markdownTitle(markItUp, "=")
-                    },
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.H2_BUTTON")
-                        key: "2"
-                        placeHolder: $translate.instant("COMMON.WYSIWYG.H2_SAMPLE_TEXT")
-                        closeWith: (markItUp) -> markdownTitle(markItUp, "-")
-                    },
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.H3_BUTTON")
-                        key: "3"
-                        openWith: "### "
-                        placeHolder: $translate.instant("COMMON.WYSIWYG.H3_SAMPLE_TEXT")
-                    },
-                    {
-                        separator: "---------------"
-                    },
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.BOLD_BUTTON")
-                        key: "B"
-                        openWith: "**"
-                        closeWith: "**"
-                        placeHolder: $translate.instant("COMMON.WYSIWYG.BOLD_BUTTON_SAMPLE_TEXT")
-                    },
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.ITALIC_SAMPLE_TEXT")
-                        key: "I"
-                        openWith: "_"
-                        closeWith: "_"
-                        placeHolder: $translate.instant("COMMON.WYSIWYG.ITALIC_SAMPLE_TEXT")
-                    },
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.STRIKE_BUTTON")
-                        key: "S"
-                        openWith: "~~"
-                        closeWith: "~~"
-                        placeHolder: $translate.instant("COMMON.WYSIWYG.STRIKE_SAMPLE_TEXT")
-                    },
-                    {
-                        separator: "---------------"
-                    },
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.BULLETED_LIST_BUTTON")
-                        openWith: "- "
-                        placeHolder: $translate.instant("COMMON.WYSIWYG.BULLETED_LIST_SAMPLE_TEXT")
-                    },
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.NUMERIC_LIST_BUTTON")
-                        openWith: (markItUp) -> markItUp.line+". "
-                        placeHolder: $translate.instant("COMMON.WYSIWYG.NUMERIC_LIST_SAMPLE_TEXT")
-                    },
-                    {
-                        separator: "---------------"
-                    },
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.PICTURE_BUTTON")
-                        key: "P"
-                        openWith: "!["
-                        closeWith: '](<<<[![Url:!:http://]!]>>> "[![Title]!]")'
-                        placeHolder: $translate.instant("COMMON.WYSIWYG.PICTURE_SAMPLE_TEXT")
-                        beforeInsert:(markItUp) -> prepareUrlFormatting(markItUp)
-                        afterInsert:(markItUp) -> urlFormatting(markItUp)
-                    },
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.LINK_BUTTON")
-                        key: "L"
-                        openWith: "["
-                        closeWith: '](<<<[![Url:!:http://]!]>>> "[![Title]!]")'
-                        placeHolder: $translate.instant("COMMON.WYSIWYG.LINK_SAMPLE_TEXT")
-                        beforeInsert:(markItUp) -> prepareUrlFormatting(markItUp)
-                        afterInsert:(markItUp) -> urlFormatting(markItUp)
-                    },
-                    {
-                        separator: "---------------"
-                    },
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.QUOTE_BLOCK_BUTTON")
-                        openWith: "> "
-                        placeHolder: $translate.instant("COMMON.WYSIWYG.QUOTE_BLOCK_SAMPLE_TEXT")
-                    },
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.CODE_BLOCK_BUTTON")
-                        openWith: "```\n"
-                        placeHolder: $translate.instant("COMMON.WYSIWYG.CODE_BLOCK_SAMPLE_TEXT")
-                        closeWith: "\n```"
-                    },
-                    {
-                        separator: "---------------"
-                    },
-                    {
-                        name: $translate.instant("COMMON.WYSIWYG.PREVIEW_BUTTON")
-                        call: preview
-                        className: "preview-icon"
-                    },
-                ]
-                afterInsert: (event) ->
-                    target = angular.element(event.textarea)
-                    $model.$setViewValue(target.val())
-
-            element
-                .markItUpRemove()
-                .markItUp(markdownSettings)
-                .textcomplete([
-                    # us, task, and issue autocomplete: #id or #<part of title>
-                    {
-                        cache: true
-                        match: /(^|\s)#([a-z0-9]+)$/i,
-                        search: (term, callback) ->
-                            term = taiga.slugify(term)
-
-                            searchTypes = ['issues', 'tasks', 'userstories']
-                            searchProps = ['ref', 'subject']
-
-                            filter = (item) =>
-                                for prop in searchProps
-                                    if taiga.slugify(item[prop]).indexOf(term) >= 0
-                                        return true
-                                return false
-
-                            cancelablePromise.abort() if cancelablePromise
-
-                            cancelablePromise = $rs.search.do($scope.projectId, term)
-
-                            cancelablePromise.then (res) =>
-                                # ignore wikipages if they're the only results. can't exclude them in search
-                                if res.count < 1 or res.count == res.wikipages.length
-                                    callback([])
-
-                                else
-                                    for type in searchTypes
-                                        if res[type] and res[type].length > 0
-                                            callback(res[type].filter(filter), true)
-
-                            # must signal end of lists
-                            callback([])
-
-                        replace: (res) ->
-                            return "$1\##{res.ref} "
-
-                        template: (res, term) ->
-                            return "\##{res.ref} - #{res.subject}"
-                    }
-
-                    # username autocomplete: @username or @<part of name>
-                    {
-                        cache: true
-                        match: /(^|\s)@([a-z0-9\-\._]{2,})$/i
-                        search: (term, callback) ->
-                            username = taiga.slugify(term)
-                            searchProps = ['username', 'full_name', 'full_name_display']
-
-                            if $scope.project.members.length < 1
-                                callback([])
-
-                            else
-                                callback $scope.project.members.filter (user) =>
-                                    for prop in searchProps
-                                        if taiga.slugify(user[prop]).indexOf(username) >= 0
-                                            return true
-                                    return false
-
-                        replace: (user) ->
-                            return "$1@#{user.username} "
-
-                        template: (user) ->
-                            return "#{user.username} - #{user.full_name_display}"
-                    }
-
-                    # wiki pages autocomplete: [[slug or [[<part of slug>
-                    # if the search function was called with the 3rd param the regex
-                    # like the docs claim, we could combine this with the #123 search
-                    {
-                        cache: true
-                        match: /(^|\s)\[\[([a-z0-9\-]+)$/i
-                        search: (term, callback) ->
-                            term = taiga.slugify(term)
-
-                            $rs.search.do($scope.projectId, term).then (res) =>
-                                if res.count < 1
-                                    callback([])
-
-                                if res.count < 1 or not res.wikipages or res.wikipages.length <= 0
-                                    callback([])
-
-                                else
-                                    callback res.wikipages.filter((page) =>
-                                        return taiga.slugify(page['slug']).indexOf(term) >= 0
-                                    ), true
-
-                                # must signal end of lists
-                                callback([])
-
-
-                        replace: (res) ->
-                            return "$1[[#{res.slug}]]"
-
-                        template: (res, term) ->
-                            return res.slug
-                    }
-                ],
-                {
-                    debounce: 200
-                }
-            )
-
-        renderMarkItUp()
-
-        unbind = $rootscope.$on "$translateChangeEnd", renderMarkItUp
-
-        element.on "keypress", (event) ->
-            $scope.$apply()
-
-        $scope.$on "$destroy", ->
-            $el.off()
-            unbind()
-
-    return {link:link, require:"ngModel"}
-
-module.directive("tgMarkitup", ["$rootScope", "$tgResources", "$selectedText", "$tgTemplate", "$compile", "$translate", MarkitupDirective])
-
-Medium = ($translate, $confirm, $storage) ->
+#                 markdown.on "mouseup.preview", ".preview", (event) ->
+#                     event.preventDefault()
+#                     target = angular.element(event.target)
+
+#                     if !target.is('a') and $selectedText.get().length
+#                         return
+
+#                     markdown.off(".preview")
+#                     closePreviewMode()
+
+#         setCaretPosition = (textarea, caretPosition) ->
+#             if textarea.createTextRange
+#                 range = textarea.createTextRange()
+#                 range.move("character", caretPosition)
+#                 range.select()
+
+#             else if textarea.selectionStart
+#                 textarea.focus()
+#                 textarea.setSelectionRange(caretPosition, caretPosition)
+
+#             # Calculate the scroll position
+#             totalLines = textarea.value.split("\n").length
+#             line = textarea.value[0..(caretPosition - 1)].split("\n").length
+#             scrollRelation = line / totalLines
+#             $el.scrollTop((scrollRelation * $el[0].scrollHeight) - ($el.height() / 2))
+
+#         addLine = (textarea, nline, replace) ->
+#             lines = textarea.value.split("\n")
+
+#             if replace
+#                 lines[nline] = replace + lines[nline]
+#             else
+#                 lines[nline] = ""
+
+#             cursorPosition = 0
+
+#             for line, key in lines
+#                 cursorPosition += line.length + 1 || 1
+
+#                 break if key == nline
+
+#             textarea.value = lines.join("\n")
+
+#             #return the new position
+#             if replace
+#                 return cursorPosition - lines[nline].length + replace.length - 1
+#             else
+#                 return cursorPosition
+
+#         prepareUrlFormatting = (markItUp) ->
+#             regex = /(<<<|>>>)/gi
+#             result = 0
+#             indices = []
+#             (indices.push(result.index)) while ( (result = regex.exec(markItUp.textarea.value)) )
+#             markItUp.donotparse = indices
+
+#         urlFormatting = (markItUp) ->
+#             regex = /<<</gi
+#             result = 0
+#             startIndex = 0
+
+#             loop
+#                 result = regex.exec(markItUp.textarea.value)
+#                 break if !result
+#                 if result.index not in markItUp.donotparse
+#                     startIndex = result.index
+#                     break
+
+#             return if !result
+
+#             regex = />>>/gi
+#             endIndex = 0
+#             loop
+#                 result = regex.exec(markItUp.textarea.value)
+#                 break if !result
+#                 if result.index not in markItUp.donotparse
+#                     endIndex = result.index
+#                     break
+
+#             value = markItUp.textarea.value
+#             url = value.substring(startIndex, endIndex).replace('<<<', '').replace('>>>', '')
+#             url = url.replace('(', '%28').replace(')', '%29')
+#             url = url.replace('[', '%5B').replace(']', '%5D')
+#             value = value.substring(0, startIndex) + url + value.substring(endIndex+3, value.length)
+#             markItUp.textarea.value = value
+#             markItUp.donotparse = undefined
+
+#         markdownTitle = (markItUp, char) ->
+#             heading = ""
+#             n = $.trim(markItUp.selection or markItUp.placeHolder).length
+
+#             for i in [0..n-1]
+#                 heading += char
+
+#             return "\n"+heading+"\n"
+
+#         renderMarkItUp = () ->
+#             markdownSettings =
+#                 nameSpace: "markdown"
+#                 onShiftEnter: {keepDefault:false, openWith:"\n\n"}
+#                 onEnter:
+#                     keepDefault: false,
+#                     replaceWith: () ->
+#                         # Allow textcomplete to intercept the enter key if the options list is displayed
+#                         # @todo There doesn't seem to be a more graceful way to do this with the textcomplete API.
+#                         if not $('.textcomplete-dropdown').is(':visible')
+#                             "\n"
+#                     afterInsert: (data) ->
+#                         lines = data.textarea.value.split("\n")
+#                         # Detect if we are in this situation +- aa at the beginning if the textarea
+#                         if data.caretPosition > 0
+#                             cursorLine = data.textarea.value[0..(data.caretPosition - 1)].split("\n").length
+#                         else
+#                             cursorLine = 1
+
+#                         newLineContent = data.textarea.value[data.caretPosition..].split("\n")[0]
+#                         lastLine = lines[cursorLine - 1]
+
+#                         # unordered list -
+#                         match = lastLine.match /^(\s*- ).*/
+
+#                         if match
+#                             emptyListItem = lastLine.match /^(\s*)\-\s$/
+
+#                             if emptyListItem
+#                                 nline = cursorLine - 1
+#                                 replace = null
+#                             else
+#                                 nline = cursorLine
+#                                 replace = "#{match[1]}"
+
+#                             markdownCaretPositon = addLine(data.textarea, nline, replace)
+
+#                         # unordered list *
+#                         match = lastLine.match /^(\s*\* ).*/
+
+#                         if match
+#                             emptyListItem = lastLine.match /^(\s*\* )$/
+
+#                             if emptyListItem
+#                                 nline = cursorLine - 1
+#                                 replace = null
+#                             else
+#                                 nline = cursorLine
+#                                 replace = "#{match[1]}"
+
+#                             markdownCaretPositon = addLine(data.textarea, nline, replace)
+
+#                         # ordered list
+#                         match = lastLine.match /^(\s*)(\d+)\.\s/
+
+#                         if match
+#                             emptyListItem = lastLine.match /^(\s*)(\d+)\.\s$/
+
+#                             if emptyListItem
+#                                 nline = cursorLine - 1
+#                                 replace = null
+#                             else
+#                                 nline = cursorLine
+#                                 replace = "#{match[1] + (parseInt(match[2], 10) + 1)}. "
+
+#                             markdownCaretPositon = addLine(data.textarea, nline, replace)
+
+#                         setCaretPosition(data.textarea, markdownCaretPositon) if markdownCaretPositon
+
+#                 markupSet: [
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.H1_BUTTON")
+#                         key: "1"
+#                         placeHolder: $translate.instant("COMMON.WYSIWYG.H1_SAMPLE_TEXT")
+#                         closeWith: (markItUp) -> markdownTitle(markItUp, "=")
+#                     },
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.H2_BUTTON")
+#                         key: "2"
+#                         placeHolder: $translate.instant("COMMON.WYSIWYG.H2_SAMPLE_TEXT")
+#                         closeWith: (markItUp) -> markdownTitle(markItUp, "-")
+#                     },
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.H3_BUTTON")
+#                         key: "3"
+#                         openWith: "### "
+#                         placeHolder: $translate.instant("COMMON.WYSIWYG.H3_SAMPLE_TEXT")
+#                     },
+#                     {
+#                         separator: "---------------"
+#                     },
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.BOLD_BUTTON")
+#                         key: "B"
+#                         openWith: "**"
+#                         closeWith: "**"
+#                         placeHolder: $translate.instant("COMMON.WYSIWYG.BOLD_BUTTON_SAMPLE_TEXT")
+#                     },
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.ITALIC_SAMPLE_TEXT")
+#                         key: "I"
+#                         openWith: "_"
+#                         closeWith: "_"
+#                         placeHolder: $translate.instant("COMMON.WYSIWYG.ITALIC_SAMPLE_TEXT")
+#                     },
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.STRIKE_BUTTON")
+#                         key: "S"
+#                         openWith: "~~"
+#                         closeWith: "~~"
+#                         placeHolder: $translate.instant("COMMON.WYSIWYG.STRIKE_SAMPLE_TEXT")
+#                     },
+#                     {
+#                         separator: "---------------"
+#                     },
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.BULLETED_LIST_BUTTON")
+#                         openWith: "- "
+#                         placeHolder: $translate.instant("COMMON.WYSIWYG.BULLETED_LIST_SAMPLE_TEXT")
+#                     },
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.NUMERIC_LIST_BUTTON")
+#                         openWith: (markItUp) -> markItUp.line+". "
+#                         placeHolder: $translate.instant("COMMON.WYSIWYG.NUMERIC_LIST_SAMPLE_TEXT")
+#                     },
+#                     {
+#                         separator: "---------------"
+#                     },
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.PICTURE_BUTTON")
+#                         key: "P"
+#                         openWith: "!["
+#                         closeWith: '](<<<[![Url:!:http://]!]>>> "[![Title]!]")'
+#                         placeHolder: $translate.instant("COMMON.WYSIWYG.PICTURE_SAMPLE_TEXT")
+#                         beforeInsert:(markItUp) -> prepareUrlFormatting(markItUp)
+#                         afterInsert:(markItUp) -> urlFormatting(markItUp)
+#                     },
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.LINK_BUTTON")
+#                         key: "L"
+#                         openWith: "["
+#                         closeWith: '](<<<[![Url:!:http://]!]>>> "[![Title]!]")'
+#                         placeHolder: $translate.instant("COMMON.WYSIWYG.LINK_SAMPLE_TEXT")
+#                         beforeInsert:(markItUp) -> prepareUrlFormatting(markItUp)
+#                         afterInsert:(markItUp) -> urlFormatting(markItUp)
+#                     },
+#                     {
+#                         separator: "---------------"
+#                     },
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.QUOTE_BLOCK_BUTTON")
+#                         openWith: "> "
+#                         placeHolder: $translate.instant("COMMON.WYSIWYG.QUOTE_BLOCK_SAMPLE_TEXT")
+#                     },
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.CODE_BLOCK_BUTTON")
+#                         openWith: "```\n"
+#                         placeHolder: $translate.instant("COMMON.WYSIWYG.CODE_BLOCK_SAMPLE_TEXT")
+#                         closeWith: "\n```"
+#                     },
+#                     {
+#                         separator: "---------------"
+#                     },
+#                     {
+#                         name: $translate.instant("COMMON.WYSIWYG.PREVIEW_BUTTON")
+#                         call: preview
+#                         className: "preview-icon"
+#                     },
+#                 ]
+#                 afterInsert: (event) ->
+#                     target = angular.element(event.textarea)
+#                     $model.$setViewValue(target.val())
+
+#             element
+#                 .markItUpRemove()
+#                 .markItUp(markdownSettings)
+#                 .textcomplete([
+#                     # us, task, and issue autocomplete: #id or #<part of title>
+#                     {
+#                         cache: true
+#                         match: /(^|\s)#([a-z0-9]+)$/i,
+#                         search: (term, callback) ->
+#                             term = taiga.slugify(term)
+
+#                             searchTypes = ['issues', 'tasks', 'userstories']
+#                             searchProps = ['ref', 'subject']
+
+#                             filter = (item) =>
+#                                 for prop in searchProps
+#                                     if taiga.slugify(item[prop]).indexOf(term) >= 0
+#                                         return true
+#                                 return false
+
+#                             cancelablePromise.abort() if cancelablePromise
+
+#                             cancelablePromise = $rs.search.do($scope.projectId, term)
+
+#                             cancelablePromise.then (res) =>
+#                                 # ignore wikipages if they're the only results. can't exclude them in search
+#                                 if res.count < 1 or res.count == res.wikipages.length
+#                                     callback([])
+
+#                                 else
+#                                     for type in searchTypes
+#                                         if res[type] and res[type].length > 0
+#                                             callback(res[type].filter(filter), true)
+
+#                             # must signal end of lists
+#                             callback([])
+
+#                         replace: (res) ->
+#                             return "$1\##{res.ref} "
+
+#                         template: (res, term) ->
+#                             return "\##{res.ref} - #{res.subject}"
+#                     }
+
+#                     # username autocomplete: @username or @<part of name>
+#                     {
+#                         cache: true
+#                         match: /(^|\s)@([a-z0-9\-\._]{2,})$/i
+#                         search: (term, callback) ->
+#                             username = taiga.slugify(term)
+#                             searchProps = ['username', 'full_name', 'full_name_display']
+
+#                             if $scope.project.members.length < 1
+#                                 callback([])
+
+#                             else
+#                                 callback $scope.project.members.filter (user) =>
+#                                     for prop in searchProps
+#                                         if taiga.slugify(user[prop]).indexOf(username) >= 0
+#                                             return true
+#                                     return false
+
+#                         replace: (user) ->
+#                             return "$1@#{user.username} "
+
+#                         template: (user) ->
+#                             return "#{user.username} - #{user.full_name_display}"
+#                     }
+
+#                     # wiki pages autocomplete: [[slug or [[<part of slug>
+#                     # if the search function was called with the 3rd param the regex
+#                     # like the docs claim, we could combine this with the #123 search
+#                     {
+#                         cache: true
+#                         match: /(^|\s)\[\[([a-z0-9\-]+)$/i
+#                         search: (term, callback) ->
+#                             term = taiga.slugify(term)
+
+#                             $rs.search.do($scope.projectId, term).then (res) =>
+#                                 if res.count < 1
+#                                     callback([])
+
+#                                 if res.count < 1 or not res.wikipages or res.wikipages.length <= 0
+#                                     callback([])
+
+#                                 else
+#                                     callback res.wikipages.filter((page) =>
+#                                         return taiga.slugify(page['slug']).indexOf(term) >= 0
+#                                     ), true
+
+#                                 # must signal end of lists
+#                                 callback([])
+
+
+#                         replace: (res) ->
+#                             return "$1[[#{res.slug}]]"
+
+#                         template: (res, term) ->
+#                             return res.slug
+#                     }
+#                 ],
+#                 {
+#                     debounce: 200
+#                 }
+#             )
+
+#         renderMarkItUp()
+
+#         unbind = $rootscope.$on "$translateChangeEnd", renderMarkItUp
+
+#         element.on "keypress", (event) ->
+#             $scope.$apply()
+
+#         $scope.$on "$destroy", ->
+#             $el.off()
+#             unbind()
+
+#     return {link:link, require:"ngModel"}
+
+# module.directive("tgMarkitup", ["$rootScope", "$tgResources", "$selectedText", "$tgTemplate", "$compile", "$translate", MarkitupDirective])
+
+Medium = ($translate, $confirm, $storage, $rs, projectService) ->
     link = ($scope, $el, $attrs) ->
         mediumEditor = null
         editor = $el.find('.medium')
@@ -583,6 +583,36 @@ Medium = ($translate, $confirm, $storage) ->
 
                 $storage.set($scope.storageKey, store)
 
+        cancelablePromise = null
+        searchItem = (term, cb) ->
+            return new Promise (resolve, reject) ->
+                term = taiga.slugify(term)
+
+                searchTypes = ['issues', 'tasks', 'userstories']
+                searchProps = ['ref', 'subject']
+
+                filter = (item) =>
+                    for prop in searchProps
+                        if taiga.slugify(item[prop]).indexOf(term) >= 0
+                            return true
+                    return false
+
+                cancelablePromise.abort() if cancelablePromise
+
+                cancelablePromise = $rs.search.do(projectService.project.get('id'), term)
+
+                cancelablePromise.then (res) =>
+                    # ignore wikipages if they're the only results. can't exclude them in search
+                    if res.count < 1 or res.count == res.wikipages.length
+                        resolve([])
+                    else
+                        result = []
+                        for type in searchTypes
+                            if res[type] and res[type].length > 0
+                                result = result.concat(res[type].filter(filter))
+
+                        resolve(result.slice(0, 10))
+
         throttleLocalSave = _.throttle(localSave, 1000)
 
         create = (text, dirty) ->
@@ -622,9 +652,30 @@ Medium = ($translate, $confirm, $storage) ->
                     ]
                 },
                 extensions: {
-                    autolist: new AutoList()
+                    autolist: new AutoList(),
+                    mediumMention: new MentionExtension()
+                    # mention: new TCMention({
+                    #     activeTriggerList: ["#", "@"],
+                    #     renderPanelContent: (panelEl, currentMentionText, selectMentionCallback) ->
+                    #         searchItem(currentMentionText.replace('#', '')).then (results) ->
+                    #             ul = $('<ul>').addClass('medium-mention')
+
+                    #             for result in results
+                    #                 cb = (item) ->
+                    #                     console.log item
+
+                    #                 $('<li>')
+                    #                     .text('#' + result.ref + ' - ' + result.subject)
+                    #                     .appendTo(ul)
+                    #                     .on 'click', cb.bind(null, result)
+
+                    #             $(panelEl).html(ul)
+                    # })
                 }
             })
+
+            mediumEditor.subscribe 'addElement', (x) ->
+                console.log x
 
             mediumEditor.subscribe 'editableInput', () ->
                 $scope.$applyAsync () ->
@@ -642,6 +693,14 @@ Medium = ($translate, $confirm, $storage) ->
 
             mediumEditor.subscribe 'editableKeydown', (e) ->
                 code = if e.keyCode then e.keyCode else e.which
+
+                mention = $('.medium-mention')
+
+                if (code == 40 || code == 38) && mention.length
+                    e.stopPropagation()
+                    e.preventDefault()
+
+                    return
 
                 if $scope.tools && code == 27
                     e.stopPropagation()
@@ -674,5 +733,7 @@ module.directive("tgMedium", [
     "$translate",
     "$tgConfirm",
     "$tgStorage",
+    "$tgResources",
+    "tgProjectService"
     Medium
 ])

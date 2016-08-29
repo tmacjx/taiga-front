@@ -172,7 +172,6 @@ paths.libs = [
     paths.vendor + "jquery-flot/jquery.flot.time.js",
     paths.vendor + "flot-axislabels/jquery.flot.axislabels.js",
     paths.vendor + "flot.tooltip/js/jquery.flot.tooltip.js",
-    paths.vendor + "jquery-textcomplete/dist/jquery.textcomplete.js",
     paths.vendor + "markitup-1x/markitup/jquery.markitup.js",
     paths.vendor + "raven-js/dist/raven.js",
     paths.vendor + "l.js/l.js",
@@ -181,16 +180,17 @@ paths.libs = [
     paths.vendor + "immutable/dist/immutable.js",
     paths.vendor + "intro.js/intro.js",
     paths.vendor + "dragula.js/dist/dragula.js",
+    paths.modules + "awesomplete/awesomplete.js",
+    paths.modules + "medium-editor/dist/js/medium-editor.js",
+    paths.modules + "to-markdown/dist/to-markdown.js",
+    paths.modules + "showdown/dist/showdown.js",
+    paths.vendor + "medium-editor-autolist/dist/autolist.js",
     paths.app + "js/dom-autoscroller.js",
     paths.app + "js/dragula-drag-multiple.js",
     paths.app + "js/tg-repeat.js",
     paths.app + "js/sha1-custom.js",
     paths.app + "js/murmurhash3_gc.js",
-    paths.modules + "awesomplete/awesomplete.js",
-    paths.modules + "medium-editor/dist/js/medium-editor.js",
-    paths.modules + "to-markdown/dist/to-markdown.js",
-    paths.modules + "showdown/dist/showdown.js",
-    paths.vendor + "medium-editor-autolist/dist/autolist.js"
+    paths.app + "js/medium-mention.js"
 ];
 
 var isDeploy = argv["_"].indexOf("deploy") !== -1;

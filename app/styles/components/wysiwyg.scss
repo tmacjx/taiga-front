@@ -153,3 +153,24 @@
         border: 1px solid $gray-light;
     }
 }
+
+.medium-editor-mention-panel {
+    background-color: $white;
+    border: 1px solid $gray-light;
+    ul {
+        margin-bottom: 0;
+    }
+    li {
+        border-top: 1px solid $gray-light;
+        cursor: pointer;
+        padding: 2px 5px;
+        &:first-child {
+            border-top: 0;
+        }
+        &:hover,
+        .active {
+            background-color: $primary-dark;
+            color: $white;
+        }
+    }
+}
