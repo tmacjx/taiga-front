@@ -484,7 +484,7 @@ module = angular.module("taigaCommon")
 
 # module.directive("tgMarkitup", ["$rootScope", "$tgResources", "$selectedText", "$tgTemplate", "$compile", "$translate", MarkitupDirective])
 
-Medium = ($translate, $confirm, $storage, $rs, projectService) ->
+Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
     link = ($scope, $el, $attrs) ->
         mediumEditor = null
         editor = $el.find('.medium')
@@ -609,7 +609,16 @@ Medium = ($translate, $confirm, $storage, $rs, projectService) ->
                         result = []
                         for type in searchTypes
                             if res[type] and res[type].length > 0
-                                result = result.concat(res[type].filter(filter))
+                                items = res[type].filter(filter)
+                                items = items.map (it) ->
+                                    it.url = $navurls.resolve("project-userstories-detail", {
+                                        project: projectService.project.get('slug'),
+                                        ref: it.ref
+                                    })
+
+                                    return it
+
+                                result = result.concat(items)
 
                         resolve(result.slice(0, 10))
 
@@ -653,24 +662,32 @@ Medium = ($translate, $confirm, $storage, $rs, projectService) ->
                 },
                 extensions: {
                     autolist: new AutoList(),
-                    mediumMention: new MentionExtension()
-                    # mention: new TCMention({
-                    #     activeTriggerList: ["#", "@"],
-                    #     renderPanelContent: (panelEl, currentMentionText, selectMentionCallback) ->
-                    #         searchItem(currentMentionText.replace('#', '')).then (results) ->
-                    #             ul = $('<ul>').addClass('medium-mention')
+                    mediumMention: new MentionExtension({
+                        # render: (el, mention, mentionCb) ->
+                        #     searchItem(mention.replace('#', '')).then (results) ->
+                        #         el.innerHTML = ''
+                        #         ul = $('<ul>').addClass('medium-mention')
+                        #
+                        #         for result in results
+                        #             cb = (item) ->
+                        #                 newUrl = $navurls.resolve("project-userstories-detail", {
+                        #                     project: projectService.project.get('slug'),
+                        #                     ref: item.ref
+                        #                 })
+                        #
+                        #                 mentionCb("#" + item.subject, newUrl)
+                        #
+                        #             $('<li>')
+                        #                 .text('#' + result.ref + ' - ' + result.subject)
+                        #                 .appendTo(ul)
+                        #                 .on 'click', cb.bind(null, result)
+                        #
+                        #         $(el).html(ul)
 
-                    #             for result in results
-                    #                 cb = (item) ->
-                    #                     console.log item
 
-                    #                 $('<li>')
-                    #                     .text('#' + result.ref + ' - ' + result.subject)
-                    #                     .appendTo(ul)
-                    #                     .on 'click', cb.bind(null, result)
-
-                    #             $(panelEl).html(ul)
-                    # })
+                        getItems: (mention, mentionCb) ->
+                            searchItem(mention.replace('#', '')).then(mentionCb)
+                    })
                 }
             })
 
@@ -717,6 +734,8 @@ Medium = ($translate, $confirm, $storage, $rs, projectService) ->
 
                 create(content, isDraft())
 
+        # todo: destroy medium and mentions
+
     return {
         templateUrl: "common/components/wysiwyg-toolbar.html",
         scope: {
@@ -734,6 +753,7 @@ module.directive("tgMedium", [
     "$tgConfirm",
     "$tgStorage",
     "$tgResources",
-    "tgProjectService"
+    "tgProjectService",
+    "$tgNavUrls",
     Medium
 ])

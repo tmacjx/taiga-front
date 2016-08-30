@@ -157,6 +157,7 @@
 .medium-editor-mention-panel {
     background-color: $white;
     border: 1px solid $gray-light;
+    position: absolute;
     ul {
         margin-bottom: 0;
     }
@@ -168,7 +169,7 @@
             border-top: 0;
         }
         &:hover,
-        .active {
+        &.active {
             background-color: $primary-dark;
             color: $white;
         }
