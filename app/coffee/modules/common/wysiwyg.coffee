@@ -564,6 +564,7 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
             $storage.remove($scope.storageKey)
 
         getHTML = (text) ->
+            #("sdf **ss ffff **")
             converter = new showdown.Converter()
             return converter.makeHtml(text)
 
@@ -580,6 +581,8 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 store = {}
                 store.version = $scope.version
                 store.text = getMarkdown(editor.html())
+
+                console.log "save local", store.text
 
                 $storage.set($scope.storageKey, store)
 
@@ -631,7 +634,9 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 mediumEditor.destroy()
 
             if text.length
+                console.log("text", text)
                 html = getHTML(text)
+                console.log("html", html)
                 editor.html(html)
 
                 originalHTML = html
@@ -663,28 +668,6 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 extensions: {
                     autolist: new AutoList(),
                     mediumMention: new MentionExtension({
-                        # render: (el, mention, mentionCb) ->
-                        #     searchItem(mention.replace('#', '')).then (results) ->
-                        #         el.innerHTML = ''
-                        #         ul = $('<ul>').addClass('medium-mention')
-                        #
-                        #         for result in results
-                        #             cb = (item) ->
-                        #                 newUrl = $navurls.resolve("project-userstories-detail", {
-                        #                     project: projectService.project.get('slug'),
-                        #                     ref: item.ref
-                        #                 })
-                        #
-                        #                 mentionCb("#" + item.subject, newUrl)
-                        #
-                        #             $('<li>')
-                        #                 .text('#' + result.ref + ' - ' + result.subject)
-                        #                 .appendTo(ul)
-                        #                 .on 'click', cb.bind(null, result)
-                        #
-                        #         $(el).html(ul)
-
-
                         getItems: (mention, mentionCb) ->
                             searchItem(mention.replace('#', '')).then(mentionCb)
                     })
