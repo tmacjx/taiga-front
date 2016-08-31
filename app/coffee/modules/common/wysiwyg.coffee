@@ -531,9 +531,13 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                     return innerHTML
             }
 
-            return toMarkdown(html, {
+            html = html.replace(/&nbsp;(<\/.*>)/g, "$1")
+
+            makdown = toMarkdown(html, {
                 converters: [converter]
             })
+
+            return makdown
 
         isOutdated = () ->
             store = $storage.get($scope.storageKey)
@@ -564,9 +568,14 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
             $storage.remove($scope.storageKey)
 
         getHTML = (text) ->
-            #("sdf **ss ffff **")
             converter = new showdown.Converter()
-            return converter.makeHtml(text)
+
+            html = converter.makeHtml(text)
+
+            html = html.replace("<strong>", "<b>").replace("</strong>", "</b>")
+            html = html.replace("<em>", "<i>").replace("</em>", "</i>")
+
+            return html
 
         cancelWithConfirmation = () ->
             title = $translate.instant("COMMON.CONFIRM_CLOSE_EDIT_MODE_TITLE")
@@ -582,8 +591,6 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 store.version = $scope.version
                 store.text = getMarkdown(editor.html())
 
-                console.log "save local", store.text
-
                 $storage.set($scope.storageKey, store)
 
         cancelablePromise = null
@@ -592,6 +599,11 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 term = taiga.slugify(term)
 
                 searchTypes = ['issues', 'tasks', 'userstories']
+                urls = {
+                    issues: "project-issues-detail",
+                    tasks: "project-tasks-detail",
+                    userstories: "project-userstories-detail"
+                }
                 searchProps = ['ref', 'subject']
 
                 filter = (item) =>
@@ -614,7 +626,7 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                             if res[type] and res[type].length > 0
                                 items = res[type].filter(filter)
                                 items = items.map (it) ->
-                                    it.url = $navurls.resolve("project-userstories-detail", {
+                                    it.url = $navurls.resolve(urls[type], {
                                         project: projectService.project.get('slug'),
                                         ref: it.ref
                                     })
@@ -634,9 +646,7 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 mediumEditor.destroy()
 
             if text.length
-                console.log("text", text)
                 html = getHTML(text)
-                console.log("html", html)
                 editor.html(html)
 
                 originalHTML = html
@@ -673,9 +683,6 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                     })
                 }
             })
-
-            mediumEditor.subscribe 'addElement', (x) ->
-                console.log x
 
             mediumEditor.subscribe 'editableInput', () ->
                 $scope.$applyAsync () ->

@@ -51,16 +51,12 @@ var MentionExtension = MediumEditor.Extension.extend({
     },
     cancelMentionSpace: function() {
         if (this.wordNode && this.wordNode.nextSibling) {
-            this.wordNode.textContent = this.word;
-
-            // var range = this.selection.getRangeAt(0).cloneRange();
-            // var parentNode = range.startContainer.parentNode;
-
             var textNode = this.document.createTextNode('');
-            textNode.textContent = '\u00A0';
+            textNode.textContent = this.word + '\u00A0';
 
-            this.wordNode.parentNode.insertBefore(textNode, this.wordNode.nextSibling);
-            MediumEditor.selection.select(this.document, textNode, 1);
+            this.wordNode.parentNode.replaceChild(textNode, this.wordNode);
+
+            MediumEditor.selection.select(this.document, textNode, this.word.length + 1);
         }
 
         this.reset();
@@ -69,7 +65,7 @@ var MentionExtension = MediumEditor.Extension.extend({
         var range = this.selection.getRangeAt(0).cloneRange();
 
         if (!range.startContainer.parentNode.classList.contains('mention')) {
-            this.wordNode = this.document.createElement('b');
+            this.wordNode = this.document.createElement('span');
             this.wordNode.classList.add('mention');
 
             range.setStart(range.startContainer, this.selection.getRangeAt(0).startOffset - this.word.length);
