@@ -127,6 +127,7 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
         discardLocalStorage = () ->
             $storage.outdated = false
             $storage.remove($scope.storageKey)
+            $scope.outdated = false
 
         getHTML = (text) ->
             converter = new showdown.Converter()
@@ -282,13 +283,14 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
 
                 $scope.editMode = true
 
-        $scope.$watch 'content', (content) ->
+        unwatch = $scope.$watch 'content', (content) ->
             if !_.isUndefined(content)
                 $scope.outdated = isOutdated()
                 content = getCurrentContent()
 
                 $scope.markdown = content
                 create(content, isDraft())
+                unwatch()
 
         # todo: destroy medium and mentions
 

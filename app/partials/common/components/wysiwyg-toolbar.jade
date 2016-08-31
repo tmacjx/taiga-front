@@ -1,6 +1,6 @@
 .editor(ng-class="{'edit-mode': editMode, 'read-mode': !editMode}")
     div(ng-if="outdated")
-        p This draft has an outdated version
+        p.outdated {{'COMMON.WYSIWYG.OUTDATED' | translate}}
 
     .medium.wysiwyg(
         tg-autofocus

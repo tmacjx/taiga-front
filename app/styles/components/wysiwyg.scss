@@ -166,9 +166,11 @@
 tg-medium {
     display: flex;
     margin-bottom: 2rem;
+    .outdated {
+        color: $red;
+    }
     .tools {
         padding-left: 1rem;
-        width: 16px;
         a {
             display: block;
             margin-bottom: .5rem;
