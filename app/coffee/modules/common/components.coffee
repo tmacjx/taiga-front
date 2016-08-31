@@ -622,7 +622,7 @@ ItemMedium = ($modelTransform, $rootscope, $confirm, attachmentsFullService) ->
         scope: true,
         link: link,
         template: """
-            <div class='wysiwyg'>
+            <div>
                 <tg-medium
                     ng-if="editableDescription"
                     version='version'
@@ -633,10 +633,13 @@ ItemMedium = ($modelTransform, $rootscope, $confirm, attachmentsFullService) ->
                 </tg-medium>
 
                 <div
+                    class="wysiwyg"
                     ng-if="!editableDescription && item.description.length"
                     ng-bind-html="item.description | markdownToHTML"></div>
 
-                <div ng-if="!editableDescription && !item.description.length">
+                <div
+                    class="wysiwyg" 
+                    ng-if="!editableDescription && !item.description.length">
                     {{'COMMON.DESCRIPTION.NO_DESCRIPTION' | translate}}
                 </div>
             </div>

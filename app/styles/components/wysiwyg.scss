@@ -1,6 +1,5 @@
 .wysiwyg {
     line-height: 1.4rem;
-    margin-bottom: 2rem;
     overflow: auto;
     padding: 1rem;
     h1 {
@@ -140,21 +139,6 @@
     hr {
         border: 1px solid $whitish;
     }
-    .medium-editor-placeholder {
-        padding-left: 1rem;
-    }
-    .mode-editor span {
-        cursor: pointer;
-    }
-    .markdown {
-        white-space: pre-line;
-    }
-    .edit-mode {
-        border: 1px solid $gray-light;
-    }
-    .mention {
-        font-weight: bold;
-    }
 }
 
 .medium-editor-mention-panel {
@@ -176,5 +160,58 @@
             background-color: $primary-dark;
             color: $white;
         }
+    }
+}
+
+tg-medium {
+    display: flex;
+    margin-bottom: 2rem;
+    .tools {
+        padding-left: 1rem;
+        width: 16px;
+        a {
+            display: block;
+            margin-bottom: .5rem;
+        }
+        svg {
+            fill: $gray-light;
+        }
+    }
+    .editor {
+        width: 100%;
+    }
+    .mode-editor {
+        span {
+            color: $gray-light;
+            cursor: pointer;
+            margin-right: .5rem;
+        }
+    }
+    .medium-editor-placeholder,
+    .markdown-editor-placeholder {
+        color: $gray-light;
+        padding-left: 1rem;
+        &::after { // overwrite medium css
+            color: $gray-light;
+            font-style: normal;
+        }
+    }
+    .markdown {
+        white-space: pre-line;
+    }
+    .read-mode {
+        cursor: pointer;
+    }
+    .edit-mode {
+        .markdown,
+        .medium {
+            border: 1px solid $gray-light;
+        }
+        .medium-editor-element {
+            min-height: 10rem;
+        }
+    }
+    .mention {
+        font-weight: bold;
     }
 }

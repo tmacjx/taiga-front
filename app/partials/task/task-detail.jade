@@ -78,7 +78,12 @@ div.wrapper(
                 div.tags-block(tg-tag-line, ng-model="task", required-perm="modify_task")
                 tg-created-by-display.ticket-created-by(ng-model="task")
 
-        section.duty-content(tg-editable-description, tg-editable-wysiwyg, ng-model="task", required-perm="modify_task")
+        section.duty-content
+            tg-item-medium(
+                type="task",
+                model="task",
+                required-perm="modify_task"
+            )
 
         // Custom Fields
         tg-custom-attributes-values(

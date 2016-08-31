@@ -1,31 +1,28 @@
-div
-    div(ng-if="tools")
-        a(
-            tg-loading="saving"
-            href="#",
-            ng-click="save()"
-        )
-            tg-svg(svg-icon="icon-save")
-        a(
-            href="#",
-            ng-click="cancel()"
-            title="{{ 'COMMON.CANCEL' | translate }}"
-        )
-            tg-svg(svg-icon="icon-close")
-
+.editor(ng-class="{'edit-mode': editMode, 'read-mode': !editMode}")
     div(ng-if="outdated")
         p This draft has an outdated version
 
-    .medium(
-        ng-class="{'edit-mode': tools}"
-        ng-show="mode == 'html'")
+    .medium.wysiwyg(
+        tg-autofocus
+        ng-show="mode == 'html'"
+    )
 
+    textarea.markdown(
+        tg-autofocus
+        placeholder="{{'COMMON.DESCRIPTION.EMPTY' | translate}}"
+        ng-change="changeMarkdown()"
+        ng-model="markdown"
+        ng-show="mode == 'markdown' && editMode"
+    )
+    
     .markdown(
-        ng-class="{'edit-mode': tools}"
-        ng-show="mode == 'markdown'")
-        {{content}}
+        ng-click="editMode = true"
+        ng-show="mode == 'markdown' && !editMode"
+    )
+        p(ng-if="markdown.length") {{markdown}}
+        p.markdown-editor-placeholder(ng-if="!markdown.length", translate="COMMON.DESCRIPTION.EMPTY")
 
-    .mode-editor(ng-if="tools")
+    .mode-editor(ng-if="editMode")
         span(
             ng-if="mode=='html'"
             ng-click="setMode('markdown')"
@@ -35,3 +32,26 @@ div
             ng-if="mode=='markdown'"
             ng-click="setMode('html')"
         ) HTML Mode
+        
+        a.help-markdown(
+            ng-if="mode=='markdown'"
+            href="https://tree.taiga.io/support/misc/taiga-markdown-syntax/"
+            target="_blank"
+            title="{{'COMMON.WYSIWYG.MARKDOWN_HELP' | translate}}"
+        )
+            tg-svg(svg-icon="icon-question")
+            span(translate="COMMON.WYSIWYG.MARKDOWN_HELP")        
+
+.tools(ng-if="editMode")
+    a(
+        tg-loading="saving"
+        href="#",
+        ng-click="save()"
+    )
+        tg-svg(svg-icon="icon-save")
+    a(
+        href="#",
+        ng-click="cancel()"
+        title="{{ 'COMMON.CANCEL' | translate }}"
+    )
+        tg-svg(svg-icon="icon-close")
