@@ -93,7 +93,12 @@ var MentionExtension = MediumEditor.Extension.extend({
         var link = document.createElement('a');
 
         link.setAttribute('href', item.url);
-        link.innerText = '#' + item.ref + '-' + item.subject;
+
+        if (item.ref) {
+            link.innerText = '#' + item.ref + '-' + item.subject;
+        } else {
+            link.innerText = '@' + item.username;
+        }
 
         this.wordNode.parentNode.replaceChild(link, this.wordNode);
         this.wordNode = link;
@@ -166,7 +171,12 @@ var MentionExtension = MediumEditor.Extension.extend({
         items.forEach(function(it) {
             var li = this.document.createElement('li');
 
-            li.innerText = '#' + it.ref + ' - ' + it.subject;
+            if (it.ref) {
+                li.innerText = '#' + it.ref + ' - ' + it.subject;
+            } else {
+                li.innerText = '@' + it.username;
+            }
+
             li.addEventListener('click', this.selectMention.bind(this, it));
 
             ul.appendChild(li);

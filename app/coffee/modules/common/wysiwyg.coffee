@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-# File: modules/common/wisiwyg.coffee
+# File: modules/common/wysiwyg.coffee
 ###
 
 taiga = @.taiga
@@ -160,7 +160,27 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 $storage.set($scope.storageKey, store)
 
         cancelablePromise = null
-        searchItem = (term, cb) ->
+
+        searchUser = (term, cb) ->
+            searchProps = ['username', 'full_name', 'full_name_display']
+
+            users = projectService.project.toJS().members.filter (user) =>
+                for prop in searchProps
+                    if taiga.slugify(user[prop]).indexOf(term) >= 0
+                        return true
+                return false
+
+             users = users.slice(0, 10).map (it) ->
+                it.url = $navurls.resolve('user-profile', {
+                    project: projectService.project.get('slug'),
+                    username: it.username
+                })
+
+                return it
+
+            cb(users)
+
+        searchItem = (term) ->
             return new Promise (resolve, reject) ->
                 term = taiga.slugify(term)
 
@@ -240,7 +260,10 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                     autolist: new AutoList(),
                     mediumMention: new MentionExtension({
                         getItems: (mention, mentionCb) ->
-                            searchItem(mention.replace('#', '')).then(mentionCb)
+                            if '#'.indexOf(mention[0]) != -1
+                                searchItem(mention.replace('#', '')).then(mentionCb)
+                            else if '@'.indexOf(mention[0]) != -1
+                                searchUser(mention.replace('@', ''), mentionCb)
                     })
                 }
             })
@@ -251,6 +274,8 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 $scope.$applyAsync () -> throttleLocalSave()
 
             mediumInstance.subscribe "editableClick", (e) ->
+                e.stopPropagation()
+
                 if e.target.href
                     window.open(e.target.href)
 
