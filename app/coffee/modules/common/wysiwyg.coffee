@@ -32,6 +32,7 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
         mediumInstance = null
         editorMedium = $el.find('.medium')
         editorMarkdown = $el.find('.markdown')
+        isCommentMode = !!$attrs.$attr.comment
 
         $scope.editMode = false
         $scope.mode = $storage.get('editor-mode', 'html')
@@ -238,7 +239,7 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 autoLink: true,
                 imageDragging: false,
                 placeholder: {
-                    text: $translate.instant('COMMON.DESCRIPTION.EMPTY')
+                    text: $scope.placeholder
                 },
                 toolbar: {
                     buttons: [
@@ -268,7 +269,8 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 }
             })
 
-            $scope.changeMarkdown = throttleLocalSave
+            if !isCommentMode
+                $scope.changeMarkdown = throttleLocalSave
 
             mediumInstance.subscribe 'editableInput', () ->
                 $scope.$applyAsync () -> throttleLocalSave()
@@ -308,20 +310,26 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
 
                 $scope.editMode = true
 
-        unwatch = $scope.$watch 'content', (content) ->
-            if !_.isUndefined(content)
-                $scope.outdated = isOutdated()
-                content = getCurrentContent()
+        if isCommentMode
+            create('', false)
+        else
+            unwatch = $scope.$watch 'content', (content) ->
+                if !_.isUndefined(content)
+                    $scope.outdated = isOutdated()
+                    content = getCurrentContent()
 
-                $scope.markdown = content
-                create(content, isDraft())
-                unwatch()
+                    $scope.markdown = content
+                    create(content, isDraft())
+                    unwatch()
 
-        # todo: destroy medium and mentions
+        $scope.$on "$destroy", () ->
+            if mediumInstance
+                mediumInstance.destroy()
 
     return {
         templateUrl: "common/components/wysiwyg-toolbar.html",
         scope: {
+            placeholder: '=',
             version: '=',
             storageKey: '=',
             content: '<',

@@ -2,19 +2,16 @@
     div(ng-if="outdated")
         p.outdated {{'COMMON.WYSIWYG.OUTDATED' | translate}}
 
-    .medium.wysiwyg(
-        tg-autofocus
-        ng-show="mode == 'html'"
-    )
+    .medium.wysiwyg(ng-show="mode == 'html'")
 
     textarea.markdown(
         tg-autofocus
-        placeholder="{{'COMMON.DESCRIPTION.EMPTY' | translate}}"
+        placeholder="{{placeholder}}"
         ng-change="changeMarkdown()"
         ng-model="markdown"
         ng-show="mode == 'markdown' && editMode"
     )
-    
+
     .markdown(
         ng-click="editMode = true"
         ng-show="mode == 'markdown' && !editMode"
@@ -32,7 +29,7 @@
             ng-if="mode=='markdown'"
             ng-click="setMode('html')"
         ) HTML Mode
-        
+
         a.help-markdown(
             ng-if="mode=='markdown'"
             href="https://tree.taiga.io/support/misc/taiga-markdown-syntax/"
@@ -40,7 +37,7 @@
             title="{{'COMMON.WYSIWYG.MARKDOWN_HELP' | translate}}"
         )
             tg-svg(svg-icon="icon-question")
-            span(translate="COMMON.WYSIWYG.MARKDOWN_HELP")        
+            span(translate="COMMON.WYSIWYG.MARKDOWN_HELP")
 
 .tools(ng-if="editMode")
     a(

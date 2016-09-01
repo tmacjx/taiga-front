@@ -135,6 +135,9 @@ var MentionExtension = MediumEditor.Extension.extend({
         }
 
         if (code === MediumEditor.util.keyCode.ENTER) {
+            e.preventDefault();
+            e.stopPropagation();
+
             var event = document.createEvent('HTMLEvents');
             event.initEvent('click', true, false);
 

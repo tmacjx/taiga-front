@@ -578,8 +578,71 @@ EditableSubjectDirective = ($rootscope, $repo, $confirm, $loading, $modelTransfo
 module.directive("tgEditableSubject", ["$rootScope", "$tgRepo", "$tgConfirm", "$tgLoading", "$tgQueueModelTransformation",
                                        "$tgTemplate", EditableSubjectDirective])
 
+# comments
+CommentMedium = ($modelTransform, $rootscope, $confirm, attachmentsFullService, $translate) ->
+    link = ($scope, $el, $attrs) ->
+        $scope.editableDescription = false
 
-ItemMedium = ($modelTransform, $rootscope, $confirm, attachmentsFullService) ->
+        $scope.saveDescription = (description, cb) ->
+            transform = $modelTransform.save (item) ->
+                item.description = description
+
+                return item
+
+            transform.then ->
+                $confirm.notify("success")
+                $rootscope.$broadcast("object:updated")
+
+            transform.then null, ->
+                $confirm.notify("error")
+
+            transform.finally ->
+                cb()
+
+        uploadFile = (file, cb) ->
+            return attachmentsFullService.addAttachment($scope.project.id, $scope.item.id, $attrs.type, file).then (result) ->
+                cb(result.getIn(['file', 'name']), result.getIn(['file', 'url']))
+
+        $scope.uploadFiles = (files, cb) ->
+            for file in files
+                uploadFile(file, cb)
+
+        $scope.$watch $attrs.model, (value) ->
+            return if not value
+            $scope.item = value
+            $scope.version = value.version
+            $scope.storageKey = $scope.project.id + "-" + value.id + "-" + $attrs.type
+
+        $scope.placeholder = $translate.instant('COMMENTS.TYPE_NEW_COMMENT')
+
+    return {
+        scope: true,
+        link: link,
+        template: """
+            <div>
+                <tg-medium
+                    placeholder='placeholder'
+                    comment
+                    version='version'
+                    storage-key='storageKey'
+                    content=''
+                    on-save='saveDescription(text, cb)'
+                    on-upload-file='uploadFiles(files, cb)'>
+                </tg-medium>
+            </div>
+        """
+    }
+
+module.directive("tgCommentMedium", [
+    "$tgQueueModelTransformation",
+    "$rootScope",
+    "$tgConfirm",
+    "tgAttachmentsFullService",
+    "$translate",
+    CommentMedium])
+
+# Used in details descriptions
+ItemMedium = ($modelTransform, $rootscope, $confirm, attachmentsFullService, $translate) ->
     link = ($scope, $el, $attrs) ->
         $scope.editableDescription = false
 
@@ -618,6 +681,9 @@ ItemMedium = ($modelTransform, $rootscope, $confirm, attachmentsFullService) ->
 
             $scope.editableDescription = project.my_permissions.indexOf($attrs.requiredPerm) != -1
 
+
+        $scope.placeholder = $translate.instant('COMMON.DESCRIPTION.EMPTY')
+
     return {
         scope: true,
         link: link,
@@ -625,6 +691,7 @@ ItemMedium = ($modelTransform, $rootscope, $confirm, attachmentsFullService) ->
             <div>
                 <tg-medium
                     ng-if="editableDescription"
+                    placeholder='placeholder'
                     version='version'
                     storage-key='storageKey'
                     content='item.description'
@@ -651,6 +718,7 @@ module.directive("tgItemMedium", [
     "$rootScope",
     "$tgConfirm",
     "tgAttachmentsFullService",
+    "$translate",
     ItemMedium])
 
 #############################################################################
