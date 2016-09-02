@@ -583,13 +583,17 @@ CommentMedium = ($modelTransform, $rootscope, $confirm, attachmentsFullService, 
     link = ($scope, $el, $attrs) ->
         $scope.editableDescription = false
 
-        #todo
         $scope.saveComment = (description, cb) ->
             $scope.vm.onAddComment({callback: cb})
 
-        #todo
+        types = {
+            userstories: "us",
+            issues: "issue",
+            tasks: "task"
+        }
+
         uploadFile = (file, cb) ->
-            return attachmentsFullService.addAttachment($scope.project.id, $scope.item.id, $attrs.type, file).then (result) ->
+            return attachmentsFullService.addAttachment($scope.vm.projectId, $scope.vm.type.id, types[$scope.vm.type._name], file).then (result) ->
                 cb(result.getIn(['file', 'name']), result.getIn(['file', 'url']))
 
         $scope.onChange = (markdown) ->

@@ -19,6 +19,7 @@ section.comments
     tg-comment-medium(
         tg-check-permission="{{::vm.canAddCommentPermission}}"
         on-update="updateComment(text)"
+        type="vm.type"
     )
 
     //- tg-editable-wysiwyg.add-comment(
