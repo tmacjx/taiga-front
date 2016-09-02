@@ -83,12 +83,10 @@ class HistorySectionController
             @._loadHistory()
             @.editing = null
 
-    addComment: () ->
-        type = @.type
-        @.loading = true
+    addComment: (cb) ->
         @repo.save(@.type).then =>
             @._loadHistory()
-            @.loading = false
+            cb()
 
     onOrderComments: () ->
         @.reverse = !@.reverse

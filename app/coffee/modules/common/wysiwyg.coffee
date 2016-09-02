@@ -71,12 +71,23 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
 
             discardLocalStorage()
 
+            if isCommentMode
+                clean()
+
             return
+
+        clean = () ->
+            $scope.markdown = ''
+            editorMedium.html('')
+            create('', false)
 
         saveEnd = () ->
             $scope.saving  = false
             $scope.editMode = false
             discardLocalStorage()
+
+            if isCommentMode
+                clean()
 
         uploadEnd = (name, url) ->
             if taiga.isImage(name)
@@ -131,6 +142,8 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
             $scope.outdated = false
 
         getHTML = (text) ->
+            return "" if !text || !text.length
+
             converter = new showdown.Converter()
 
             html = converter.makeHtml(text)
@@ -148,17 +161,24 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 $scope.cancel()
                 askResponse.finish()
 
-        localSave = () ->
+        localSave = (markdown) ->
             if $scope.storageKey && $scope.version
                 store = {}
                 store.version = $scope.version
-
-                if $scope.mode == 'html'
-                    store.text = getMarkdown(editorMedium.html())
-                else
-                    store.text = $scope.markdown
+                store.text = markdown
 
                 $storage.set($scope.storageKey, store)
+
+        change = () ->
+            if $scope.mode == 'html'
+                markdown = getMarkdown(editorMedium.html())
+            else
+                markdown = $scope.markdown
+
+            if !isCommentMode
+                localSave(markdown)
+
+            $scope.onChange({markdown: markdown})
 
         cancelablePromise = null
 
@@ -224,7 +244,7 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
 
                         resolve(result.slice(0, 10))
 
-        throttleLocalSave = _.throttle(localSave, 1000)
+        throttleChange = _.throttle(change, 1000)
 
         create = (text, dirty) ->
             if mediumInstance
@@ -269,11 +289,10 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 }
             })
 
-            if !isCommentMode
-                $scope.changeMarkdown = throttleLocalSave
+            $scope.changeMarkdown = throttleChange
 
             mediumInstance.subscribe 'editableInput', () ->
-                $scope.$applyAsync () -> throttleLocalSave()
+                $scope.$applyAsync(throttleChange)
 
             mediumInstance.subscribe "editableClick", (e) ->
                 e.stopPropagation()
@@ -334,7 +353,8 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
             storageKey: '=',
             content: '<',
             onSave: '&',
-            onUploadFile: '&'
+            onUploadFile: '&',
+            onChange: '&'
         },
         link: link
     }

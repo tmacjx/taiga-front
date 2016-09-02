@@ -583,25 +583,17 @@ CommentMedium = ($modelTransform, $rootscope, $confirm, attachmentsFullService, 
     link = ($scope, $el, $attrs) ->
         $scope.editableDescription = false
 
-        $scope.saveDescription = (description, cb) ->
-            transform = $modelTransform.save (item) ->
-                item.description = description
+        #todo
+        $scope.saveComment = (description, cb) ->
+            $scope.vm.onAddComment({callback: cb})
 
-                return item
-
-            transform.then ->
-                $confirm.notify("success")
-                $rootscope.$broadcast("object:updated")
-
-            transform.then null, ->
-                $confirm.notify("error")
-
-            transform.finally ->
-                cb()
-
+        #todo
         uploadFile = (file, cb) ->
             return attachmentsFullService.addAttachment($scope.project.id, $scope.item.id, $attrs.type, file).then (result) ->
                 cb(result.getIn(['file', 'name']), result.getIn(['file', 'url']))
+
+        $scope.onChange = (markdown) ->
+            $scope.vm.type.comment = markdown
 
         $scope.uploadFiles = (files, cb) ->
             for file in files
@@ -626,7 +618,8 @@ CommentMedium = ($modelTransform, $rootscope, $confirm, attachmentsFullService, 
                     version='version'
                     storage-key='storageKey'
                     content=''
-                    on-save='saveDescription(text, cb)'
+                    on-change="onChange(markdown)",
+                    on-save='saveComment(text, cb)'
                     on-upload-file='uploadFiles(files, cb)'>
                 </tg-medium>
             </div>

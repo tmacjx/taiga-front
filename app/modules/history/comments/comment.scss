@@ -1,5 +1,15 @@
 .comments {
     clear: both;
+    tg-medium {
+        margin-top: 1.5rem;
+    }
+    .read-mode {
+        border: 1px solid $gray-light;
+        height: 55px;
+        .medium-editor-placeholder {
+            height: 55px;
+        }
+    }
     .add-comment {
         margin-top: 1rem;
         textarea {
@@ -20,7 +30,6 @@
         margin-top: 1rem;
         padding: .5rem 4rem;
     }
-
 }
 .comment {
     display: block;
