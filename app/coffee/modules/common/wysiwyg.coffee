@@ -161,6 +161,7 @@ Medium = ($translate, $confirm, $storage, $rs, projectService, $navurls) ->
                 $scope.cancel()
                 askResponse.finish()
 
+        # todo: comments
         localSave = (markdown) ->
             if $scope.storageKey && $scope.version
                 store = {}

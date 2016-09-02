@@ -2,6 +2,14 @@ var MentionExtension = MediumEditor.Extension.extend({
     name: 'mediumMention',
     init: function() {
         this.subscribe('editableKeyup', this.handleKeyup.bind(this));
+        this.subscribe('editableKeydown', this.handleKeydown.bind(this));
+    },
+    handleKeydown: function(e) {
+        var code = e.keyCode ? e.keyCode : e.which;
+
+        if (this.mentionPanel && code === MediumEditor.util.keyCode.ENTER) {
+            e.preventDefault();
+        }
     },
     handleKeyup: function(e) {
         var code = e.keyCode ? e.keyCode : e.which;
